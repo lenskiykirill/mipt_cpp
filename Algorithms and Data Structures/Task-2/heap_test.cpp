@@ -17,7 +17,8 @@ int main() {
 	std::cout << "2) \033[0;32me\033[0m       : extract minimal number from heap\n";
 	std::cout << "3) \033[0;32ms\033[0m       : print heap size\n";
 	std::cout << "4) \033[0;32mc\033[0m       : clear heap (unavailable for now)\n";
-	std::cout << "5) \033[1;31mx\033[0m       : exit\n";
+	std::cout << "5) \033[0;32mt\033[0m       : get top (minimal) element\n";
+	std::cout << "6) \033[1;31mx\033[0m       : exit\n";
 	std::cout << "\n";
 
 	while ( true ) {
@@ -40,6 +41,9 @@ int main() {
 					
 			case 's':
 				std::cout << heap.size() << '\n';
+				break;
+			case 't':
+				std::cout << heap.top() << '\n';
 				break;
 			case 'x':
 				std::cout << "Goodbye...\n";
