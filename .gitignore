@@ -1,0 +1,14 @@
+# Ignore everything
+*
+
+# But not .cpp, .c, .h
+!*.cpp
+!*.c
+!*.h
+
+# Or directories
+!*/
+
+# Or .gitignore and README.md
+!.gitignore
+!README.md
