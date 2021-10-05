@@ -26,6 +26,7 @@ namespace dst {
 				void heapify ( void );
 				T& extract ( void );
 				void insert ( T& element );
+				const T& top ( void );
 
 				T* sort( void );
 
@@ -186,6 +187,10 @@ namespace dst {
 			return this->heap_array;
 		}
 
+	template<class T, class C>
+		const T& heap<T, C>::top ( void ) {
+			return heap_array[0];
+		}
 	template<class T, class C>
 		unsigned int heap<T, C>::size ( void ) {
 			return this->heap_size;
