@@ -45,6 +45,9 @@ int main() {
 			case 't':
 				std::cout << heap.top() << '\n';
 				break;
+			case 'c':
+				heap.clear();
+				break;
 			case 'x':
 				std::cout << "Goodbye...\n";
 				return 0;

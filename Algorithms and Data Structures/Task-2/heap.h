@@ -30,6 +30,8 @@ namespace dst {
 
 				T* sort( void );
 
+				void clear ( void );
+
 				void display ( void );
 
 				unsigned int size ( void );
@@ -191,10 +193,23 @@ namespace dst {
 		const T& heap<T, C>::top ( void ) {
 			return heap_array[0];
 		}
+	
 	template<class T, class C>
 		unsigned int heap<T, C>::size ( void ) {
 			return this->heap_size;
 		}
+
+	template<class T, class C>
+		void heap<T, C>::clear ( void ) {
+			if (!(this->is_external_array)) {
+				delete this->heap_array;
+				this->heap_array = new T[3];
+				this->array_size = 3;
+				this->heap_size = 0;
+			}
+			return;
+		}
+
 /*
 	template<class T, class C>
 		void heap<T, C>::display ( void ) {
