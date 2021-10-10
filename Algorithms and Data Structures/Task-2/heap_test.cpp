@@ -1,4 +1,4 @@
-#include "heap.h"
+#include "new_heap.h"
 #include <iostream>
 
 bool is_less (int a, int b) {
@@ -9,7 +9,7 @@ int main() {
 	char cmd = '\0';
 	int value;
 
-	dst::heap<int, bool (*) (int, int)> heap(is_less);
+	dst::heap<int> heap(is_less);
 
 	std::cout << "\033[1;31m.:Amazing heap v0.01:.\033[0m\n";
 	std::cout << "\nAvailable commands:\n\n";
