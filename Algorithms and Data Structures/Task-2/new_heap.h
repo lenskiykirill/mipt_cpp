@@ -1,11 +1,14 @@
 namespace dst {
 	template <class T>
+		bool cmp_default (T first, T second) { return first < second; }
+
+	template <class T>
 		class heap {
 			public:
-				heap (bool (*cmp_function) (T, T) = cmp_default);
+				heap (bool (*cmp_function) (T, T) = cmp_default<T>);
 				
 				heap (T* extern_array, unsigned int size,
-					bool (*cmp_function) (T, T) = cmp_default);
+					bool (*cmp_function) (T, T) = cmp_default<T>);
 
 				~heap (void);
 
@@ -18,8 +21,10 @@ namespace dst {
 
 				T* sort (void);
 				unsigned int size (void);
-			
-			private:
+
+				void display (void);	
+//			private:
+		
 				bool (*is_less) (T, T);
 				
 				T* heap_array;
@@ -38,8 +43,6 @@ namespace dst {
 				void sift_down (unsigned int idx);
 
 				void expand (void);
-
-				void cmp_default (T first, T second) { return first < second; }
 
 				void heap_swap (unsigned int first_idx, unsigned int second_idx);
 		};
@@ -185,9 +188,9 @@ namespace dst {
 				this->key_array[i] = i;
 			}
 
-			for (unsigned int i=0; i < this->heap_size; i++) {
+			for (unsigned int i = this->heap_size; i > 0; i--) {
 				
-				this->sift_down (i);
+				this->sift_down (i - 1);
 			}
 			
 			return;
@@ -196,9 +199,9 @@ namespace dst {
 	template <class T>
 		void heap<T>::heapify (void) {
 			
-			for (unsigned int i=9; i < this->heap_size; i++) {
+			for (unsigned int i = this->heap_size; i > 0; i--) {
 
-				this->sift_down (i);
+				this->sift_down (i - 1);
 			}
 
 			return;
@@ -215,7 +218,7 @@ namespace dst {
 			this->key_array[this->last_key] = this->last_key;
 			++(this->last_key);
 
-			this->sift_up (this->heap_size + 1);
+			this->sift_up (this->heap_size - 1);
 
 			return this->last_key - 1;
 		}
@@ -299,3 +302,16 @@ namespace dst {
 }
 
 
+namespace dst {
+	template <class T>
+		void heap<T>::display (void) {
+
+			for (unsigned int n=1; n <= this->heap_size; n <<= 1) {
+				std::cout << n << ": ";
+				for (int i=n-1; (i < (n << 1) - 1) && (i < this->heap_size); i++)
+					std::cout << heap_array[i] << ' ';
+				std::cout << '\n';
+			}
+
+		}
+}
