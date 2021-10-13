@@ -304,6 +304,13 @@ namespace dst {
 
 }
 
+/*  This works because a+b is lexicographically greater than b+a if 0.(a) in period is > 0.(b) in period.
+ *  For no two numbers a,b in maximal sequence which stand consequently a+b can't be < b+a, or else they
+ *  could be swapped (+ here means concatenation). So the 0.(a) also must be a decreasing sequence. Therefore
+ *  by sorting the numbers by their 0.(a) we get the biggest number. (And numbers are sorted with this
+ *  comparison function, which utilizes the fact that a+b < b+a <=> 0.(a) < 0.(b). Ta-dam!
+ */
+
 bool is_less(const std::string a, const std::string b) {
 	
 	for (int i=0; i < a.size() + b.size(); i++) {
