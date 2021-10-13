@@ -59,7 +59,7 @@ namespace dst {
 			this->key_array = new unsigned int [2];
 			this->key_size = 2;
 			this->last_key = 0;
-
+		
 			return;
 		}
 
@@ -88,9 +88,10 @@ namespace dst {
 
 	template <class T>
 		heap<T>::~heap (void) {
-			
+
 			if (!this->is_external) {
-				delete this->heap_array;
+			
+				delete [] this->heap_array;
 			}
 
 			delete this->key_array;
@@ -274,7 +275,7 @@ namespace dst {
 					new_array[i] = this->heap_array[i];
 				}
 
-				delete this->heap_array;
+				delete [] this->heap_array;
 
 				this->heap_array = new_array;
 			}
