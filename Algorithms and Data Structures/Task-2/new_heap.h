@@ -226,8 +226,7 @@ namespace dst {
 	template <class T>
 		T& heap<T>::extract (void) {
 			
-			this->heap_swap (this->heap_array[0],
-					this->heap_array[this->heap_size - 1]);
+			this->heap_swap (0, this->heap_size - 1);
 
 			--(this->heap_size);
 			this->sift_down(0);
