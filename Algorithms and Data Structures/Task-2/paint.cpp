@@ -1,5 +1,4 @@
-#include <fstream>
-#include <string>
+#include <iostream>
 
 namespace dst {
 	template <class T>
@@ -9,7 +8,7 @@ namespace dst {
 		class heap {
 			public:
 				heap (bool (*cmp_function) (T, T) = cmp_default<T>);
-
+				
 				heap (T* extern_array, unsigned int size,
 					bool (*cmp_function) (T, T) = cmp_default<T>);
 
@@ -17,7 +16,7 @@ namespace dst {
 
 				void heapify (T* extern_array, unsigned int size);
 				void heapify (void);
-
+				
 				T& extract (void); // Extract minimal element from heap
 				unsigned int insert (T& element); // Insert element and return its key
 				const T& top (void);
@@ -25,11 +24,11 @@ namespace dst {
 				T* sort (void);
 				unsigned int size (void);
 
-				void display (void);
+				void display (void);	
 //			private:
-
+		
 				bool (*is_less) (T, T);
-
+				
 				T* heap_array;
 				unsigned int heap_size;
 				unsigned int array_size;
@@ -37,7 +36,7 @@ namespace dst {
 				unsigned int* key_array;
 				unsigned int key_size;
 				unsigned int last_key;
-
+				
 				bool is_external = false;
 
 				unsigned int parent (unsigned int idx);
@@ -52,7 +51,7 @@ namespace dst {
 
 	template <class T>
 		heap<T>::heap (bool (*cmp_function) (T, T)) {
-
+			
 			this->is_less = cmp_function;
 
 			this->heap_array = new T[2];
@@ -62,13 +61,13 @@ namespace dst {
 			this->key_array = new unsigned int [2];
 			this->key_size = 2;
 			this->last_key = 0;
-
+		
 			return;
 		}
 
 	template <class T>
 		heap<T>::heap (T* extern_array, unsigned int size, bool (*cmp_function) (T, T)) {
-
+			
 			this->is_less = cmp_function;
 
 			this->heap_array = extern_array;
@@ -80,7 +79,7 @@ namespace dst {
 			this->last_key = size;
 
 			for (unsigned int i=0; i < size; i++) {
-
+				
 				this->key_array[i] = i;
 			}
 
@@ -93,7 +92,7 @@ namespace dst {
 		heap<T>::~heap (void) {
 
 			if (!this->is_external) {
-
+			
 				delete [] this->heap_array;
 			}
 
@@ -118,13 +117,13 @@ namespace dst {
 
 			this->heap_array[second] = swap;
 			this->key_array[second] = key_swap;
-
+			
 			return;
 		}
 
 	template <class T>
 		void heap<T>::sift_up (unsigned int idx) {
-
+			
 			while ( (idx > 0) && (this->is_less (heap_array[idx],
 							heap_array[this->parent (idx)])) ) {
 
@@ -137,19 +136,19 @@ namespace dst {
 
 	template <class T>
 		void heap<T>::sift_down (unsigned int idx) {
-
+			
 			unsigned int first_child;
 			unsigned int second_child;
 			unsigned int min_child;
 
 			while ( (second_child = 2 * idx + 2) < this->heap_size ) {
-
+				
 				first_child = 2 * idx + 1;
 				min_child = first_child;
 
 				if (this->is_less (this->heap_array[second_child],
 							this->heap_array[first_child])) {
-
+					
 					min_child = second_child;
 				}
 
@@ -167,7 +166,7 @@ namespace dst {
 			if ( (first_child < heap_size) &&
 				(this->is_less (this->heap_array[first_child],
 						this->heap_array[idx])) ) {
-
+				
 				this->heap_swap (idx, first_child);
 			}
 
@@ -193,16 +192,16 @@ namespace dst {
 			}
 
 			for (unsigned int i = this->heap_size; i > 0; i--) {
-
+				
 				this->sift_down (i - 1);
 			}
-
+			
 			return;
 		}
 
 	template <class T>
 		void heap<T>::heapify (void) {
-
+			
 			for (unsigned int i = this->heap_size; i > 0; i--) {
 
 				this->sift_down (i - 1);
@@ -213,7 +212,7 @@ namespace dst {
 
 	template <class T>
 		unsigned int heap<T>::insert (T& element) {
-
+			
 			this->expand();
 
 			this->heap_array[heap_size] = element;
@@ -229,7 +228,7 @@ namespace dst {
 
 	template <class T>
 		T& heap<T>::extract (void) {
-
+			
 			this->heap_swap (0, this->heap_size - 1);
 
 			--(this->heap_size);
@@ -240,13 +239,13 @@ namespace dst {
 
 	template <class T>
 		const T& heap<T>::top (void) {
-
+			
 			return this->heap_array[0];
 		}
 
 	template <class T>
 		void heap<T>::expand (void) {
-
+			
 			if (this->last_key == this->key_size) {
 
 				this->key_size = (this->key_size * 3 + 1) / 2;
@@ -304,39 +303,70 @@ namespace dst {
 
 }
 
-/*  This works because a+b is lexicographically greater than b+a if 0.(a) in period is > 0.(b) in period.
- *  For no two numbers a,b in maximal sequence which stand consequently a+b can't be < b+a, or else they
- *  could be swapped (+ here means concatenation). So the 0.(a) also must be a decreasing sequence. Therefore
- *  by sorting the numbers by their 0.(a) we get the biggest number. (And numbers are sorted with this
- *  comparison function, which utilizes the fact that a+b < b+a <=> 0.(a) < 0.(b). Ta-dam!
- */
 
-bool is_less(const std::string a, const std::string b) {
+struct pair {
+	unsigned int x;
+	bool is_right;
+};
 
-	return a+b < b+a;	
+bool is_greater (pair f, pair s) {
+
+	return f.x > s.x;
 }
 
-int main() {
-	dst::heap<std::string> heap(is_less);
-
-	std::ifstream istream("number.in");
-
-	std::string a;
-	unsigned int N = 0;
-
-	while (istream >> a) {
-
-		heap.insert(a);
-		++N;
-	}
+int main () {
+	unsigned int N;
 	
-	std::string *ans = heap.sort();
+	std::cin >> N;
 
-	std::ofstream ostream("number.out");
-
+	pair* L = new pair[2*N];
+	
 	for (unsigned int i=0; i < N; i++) {
-		ostream << ans[i];
+
+		std::cin >> L[2*i].x;
+		
+		L[2*i].is_right = false;
+
+		std::cin >> L[2*i + 1].x;
+
+		L[2*i + 1].is_right = true;
+
 	}
+
+	dst::heap<struct pair> heap (L, 2*N, is_greater);
+	heap.heapify();
+	heap.sort();
+
+/*	for (int i=0; i < 2*N; i++) {
+		std::cout << "(" << L[i].x << ", ";
+		if (L[i].is_right) std::cout << "R) ";
+		else std::cout << "L) ";
+	}
+	std::cout << "\n";
+*/
+
+	unsigned int layers = 0;
+	unsigned int answer = 0;
+	
+	for (unsigned int i=0; i < 2*N; i++) {
+		
+		if (layers == 1) {
+			answer += L[i].x - L[i-1].x;
+		}
+
+		if (L[i].is_right) {
+			
+			--layers;
+		
+		} else {
+		
+			++layers;
+		}
+	}
+
+	std::cout << answer << std::endl;
+
+	delete [] L;
 
 	return 0;
 }
