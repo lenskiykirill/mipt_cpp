@@ -22,8 +22,12 @@ namespace dst {
 				T* sort (void);
 				unsigned int size (void);
 
+				const T& get_by_key (unsigned int key);
+
+				void decrease_key (unsigned int key, const T& delta);
+
 				void display (void);	
-//			private:
+		//	private:
 		
 				bool (*is_less) (T, T);
 				
@@ -35,6 +39,8 @@ namespace dst {
 				unsigned int key_size;
 				unsigned int last_key;
 				
+				unsigned int* keys;
+
 				bool is_external = false;
 
 				unsigned int parent (unsigned int idx);
@@ -56,6 +62,8 @@ namespace dst {
 			this->heap_size = 0;
 			this->array_size = 2;
 
+			this->keys = new unsigned int [2];
+
 			this->key_array = new unsigned int [2];
 			this->key_size = 2;
 			this->last_key = 0;
@@ -71,6 +79,13 @@ namespace dst {
 			this->heap_array = extern_array;
 			this->heap_size = size;
 			this->array_size = size;
+
+			this->keys = new unsigned int [size];
+
+			for (unsigned int i=0; i < size; i++) {
+
+				this->keys[i] = i;
+			}
 
 			this->key_array = new unsigned int [size];
 			this->key_size = size;
@@ -96,6 +111,8 @@ namespace dst {
 
 			delete this->key_array;
 
+			delete this->keys;
+
 			return;
 		}
 
@@ -108,13 +125,20 @@ namespace dst {
 		void heap<T>::heap_swap (unsigned int first, unsigned int second) {
 
 			T swap = this->heap_array[first];
-			unsigned int key_swap = this->key_array[first];
+
+			unsigned int key_first = this->keys[first];
+			unsigned int key_second = this->keys[second];
+			unsigned int key_swap = this->key_array[key_first];
 
 			this->heap_array[first] = this->heap_array[second];
-			this->key_array[first] = this->key_array[second];
+			this->key_array[key_first] = this->key_array[key_second];
 
 			this->heap_array[second] = swap;
-			this->key_array[second] = key_swap;
+			this->key_array[key_second] = key_swap;
+
+			this->keys[first] = key_second;
+
+			this->keys[second] = key_first;
 			
 			return;
 		}
@@ -214,9 +238,11 @@ namespace dst {
 			this->expand();
 
 			this->heap_array[heap_size] = element;
-			++(this->heap_size);
+			this->keys[heap_size] = this->last_key;
 
-			this->key_array[this->last_key] = this->last_key;
+			this->key_array[this->last_key] = this->heap_size;
+
+			++(this->heap_size);
 			++(this->last_key);
 
 			this->sift_up (this->heap_size - 1);
@@ -269,15 +295,19 @@ namespace dst {
 				this->array_size = (this->array_size * 3 + 1) / 2;
 
 				T* new_array = new T[this->array_size];
+				unsigned int* new_keys = new unsigned int [this->array_size];
 
 				for (unsigned int i=0; i < this->heap_size; i++) {
 
 					new_array[i] = this->heap_array[i];
+					new_keys[i] = this->keys[i];
 				}
 
 				delete [] this->heap_array;
+				delete [] this->keys;
 
 				this->heap_array = new_array;
+				this->keys = new_keys;
 			}
 
 			return;
@@ -297,6 +327,27 @@ namespace dst {
 		unsigned int heap<T>::size (void) {
 
 			return this->heap_size;
+		}
+
+	template <class T>
+		const T& heap<T>::get_by_key (unsigned int key) {
+
+			unsigned int idx = this->key_array[key];
+
+			return this->heap_array[idx];
+		}
+
+	template <class T>
+		void heap<T>::decrease_key (unsigned int key, const T& delta) {
+
+			unsigned int idx = this->key_array[key];
+
+			this->heap_array[idx] -= delta;
+
+			this->sift_up (idx);
+//			this->sift_down (idx);
+
+			return;
 		}
 
 }
