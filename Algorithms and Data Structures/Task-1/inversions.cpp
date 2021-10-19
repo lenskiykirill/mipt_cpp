@@ -105,8 +105,8 @@ int main () {
 
 	output.close();
 
-	delete A;
-	delete swap;
+	delete[] A;
+	delete[] swap;
 
 	return 0;
 }
