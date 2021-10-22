@@ -6,7 +6,7 @@ namespace dst {
 		class stack_node {
 			friend class stack<T>;
 
-			public:
+			private:
 				stack_node ( void ) = default;
 				~stack_node ( void ) = default;
 
