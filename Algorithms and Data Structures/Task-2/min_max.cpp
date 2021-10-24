@@ -12,15 +12,19 @@ namespace dst {
 		class double_heap {
 			public:
 				double_heap (C cmp_function = __cmp_default<T>());
+				~double_heap ( void );
+
 				// double_heap (T* min_heap, size_t min_heap_size, T* max_heap, size_t max_heap_size);
 
-				// const T& get_min ( void );
-				// const T& get_max ( void );
+				 const T& get_min ( void );
+				 const T& get_max ( void );
 
-				// const T& extract_min ( void );
-				// const T& extract_max ( void );
+				const T extract_min ( void );
+				const T extract_max ( void );
 				
 				void insert ( const T& value );
+
+				void clear ( void );
 
 			private:
 				T* min_heap;
@@ -37,8 +41,11 @@ namespace dst {
 				bool min_cmp (const T& left, const T& right) { return cmp_function (left, right); }
 				bool max_cmp (const T& left, const T& right) { return !cmp_function (left, right); }
 
-				void sift_up (size_t idx, T* array, size_t size, size_t* ptr_array_aux, size_t* ptr_aux_array, bool (*cmp_function) (const T&, const T&));
-				void sift_down (size_t idx, T* array, size_t size, size_t* ptr_array_aux, size_t* ptr_aux_array, bool (*cmp_function) (const T&, const T&));
+				void sift_up ( size_t idx, T* array, size_t size, size_t* ptr_array_aux,
+					       size_t* ptr_aux_array, bool (double_heap<T,C>::*cmp_function) (const T&, const T&) );
+
+				void sift_down ( size_t idx, T* array, size_t size, size_t* ptr_array_aux,
+						 size_t* ptr_aux_array, bool (double_heap<T,C>::*cmp_function) (const T&, const T&));
 				
 				void heap_swap (size_t first, size_t second, T* array, size_t* ptr_array_aux, size_t* ptr_aux_array);
 
@@ -68,9 +75,9 @@ namespace dst {
 	template <class T, class C>
 		void double_heap<T,C>::sift_up ( size_t idx, T* array, size_t size,
 			                         size_t* ptr_array_aux, size_t* ptr_aux_array,
-			                         bool (*cmp_function) (const T&, const T&)) {
+			                         bool (double_heap<T,C>::*cmp_function) (const T&, const T&)) {
 
-			while ((idx > 0) && cmp_function (array[idx], array[(idx - 1)/2])) {
+			while ((idx > 0) && (this->*cmp_function) (array[idx], array[(idx - 1)/2])) {
 			
 				heap_swap (idx, (idx - 1)/2, array, ptr_array_aux, ptr_aux_array);
 
@@ -83,7 +90,7 @@ namespace dst {
 	template <class T, class C>
 		void double_heap<T,C>::sift_down ( size_t idx, T* array, size_t size,
 				 		   size_t* ptr_array_aux, size_t* ptr_aux_array,
-				                   bool (*cmp_function) (const T&, const T&) ) {
+				                   bool (double_heap<T,C>::*cmp_function) (const T&, const T&) ) {
 
 			size_t left = 2*idx + 1;
 			size_t right = left + 1;
@@ -92,11 +99,11 @@ namespace dst {
 				
 				size_t top_idx = left;
 
-				if (cmp_function (array[right], array[top_idx])) {
-						top_idx = right;
+				if ((this->*cmp_function) (array[right], array[top_idx])) {
+					top_idx = right;
 				}
 
-				if (cmp_function (array[idx], array[top_idx])) {
+				if ((this->*cmp_function) (array[idx], array[top_idx])) {
 					break;
 				}
 
@@ -107,7 +114,7 @@ namespace dst {
 				right = left + 1;		
 			}
 
-			if ((left < size) && cmp_function (array[left], array[idx])) {
+			if ((left < size) && (this->*cmp_function) (array[left], array[idx])) {
 				heap_swap (idx, left, array, ptr_array_aux, ptr_aux_array);
 			}
 
@@ -126,8 +133,16 @@ namespace dst {
 			heap_allocated = 1;
 
 			this->cmp_function = cmp_function;
+		}
 
-			return;
+	template <class T, class C>
+		double_heap<T,C>::~double_heap (void) {
+			
+			delete [] max_heap;
+			delete [] min_heap;
+
+			delete [] ptr_max_min;
+			delete [] ptr_min_max;
 		}
 
 	template <class T, class C>
@@ -176,22 +191,196 @@ namespace dst {
 			ptr_min_max[heap_size] = heap_size;
 			ptr_max_min[heap_size] = heap_size;
 
-			sift_up (heap_size, min_heap, heap_size, ptr_min_max, ptr_max_min, min_cmp);
-			sift_up (heap_size, max_heap, heap_size, ptr_max_min, ptr_min_max, max_cmp);
+			sift_up (heap_size, min_heap, heap_size, ptr_min_max, ptr_max_min, &double_heap<T,C>::min_cmp);
+			sift_up (heap_size, max_heap, heap_size, ptr_max_min, ptr_min_max, &double_heap<T,C>::max_cmp);
 
 			++heap_size;
 
 			return;
 		}
+
+	template <class T, class C>
+		const T& double_heap<T,C>::get_min (void) {
+			return min_heap[0];
+		}
+
+	template <class T, class C>
+		const T& double_heap<T,C>::get_max (void) {
+			return max_heap[0];
+		}
+	
+	template <class T, class C>
+		const T double_heap<T,C>::extract_min (void) {
+
+			--heap_size;
+
+			size_t max_heap_idx = ptr_min_max[0];
+
+			T result = min_heap[0];
+
+			heap_swap (0, heap_size, min_heap, ptr_min_max, ptr_max_min);
+			heap_swap (max_heap_idx, heap_size, max_heap, ptr_max_min, ptr_min_max);
+
+			sift_down (0, min_heap, heap_size, ptr_min_max, ptr_max_min, &double_heap<T,C>::min_cmp);
+			sift_down (max_heap_idx, max_heap, heap_size, ptr_max_min, ptr_min_max, &double_heap<T,C>::max_cmp);
+			sift_up (max_heap_idx, max_heap, heap_size, ptr_max_min, ptr_min_max, &double_heap<T,C>::max_cmp);
+
+			return result;
+		}
+
+	template <class T, class C>
+		const T double_heap<T,C>::extract_max (void) {
+			
+			--heap_size;
+
+			size_t min_heap_idx = ptr_max_min[0];
+
+			T result = max_heap[0];
+
+			heap_swap (0, heap_size, max_heap, ptr_max_min, ptr_min_max);
+			heap_swap (min_heap_idx, heap_size, min_heap, ptr_min_max, ptr_max_min);
+
+			sift_down (0, max_heap, heap_size, ptr_max_min, ptr_min_max, &double_heap<T,C>::max_cmp);
+			sift_down (min_heap_idx, min_heap, heap_size, ptr_min_max, ptr_max_min, &double_heap<T,C>::min_cmp);
+			sift_up (min_heap_idx, min_heap, heap_size, ptr_min_max, ptr_max_min, &double_heap<T,C>::min_cmp);
+
+			return result;
+		}
+
+	template <class T, class C>
+		void double_heap<T,C>::clear (void) {
+			heap_size = 0;
+
+			return;
+		}
+}
+
+/*
+#include <iostream>
+
+void display(dst::double_heap<int>& heap) {
+
+	std::cout << "min_heap: [";
+	
+	for (int i=0; i < ((int)heap.heap_size)-1; i++) {
+		std::cout << heap.min_heap[i] << ", ";
+	}
+	
+	std::cout << heap.min_heap[heap.heap_size-1] << "]\n";	
+
+	std::cout << "max_heap: [";
+	
+	for (int i=0; i < ((int)heap.heap_size)-1; i++) {
+		std::cout << heap.max_heap[i] << ", ";
+	}
+	
+	std::cout << heap.max_heap[heap.heap_size-1] << "]\n";
+
+	std::cout << "ptr_min_max: [";
+	
+	for (int i=0; i < ((int)heap.heap_size)-1; i++) {
+		std::cout << heap.ptr_min_max[i] << ", ";
+	}
+	
+	std::cout << heap.ptr_min_max[heap.heap_size-1] << "]\n";
+
+	std::cout << "ptr_max_min: [";
+	
+	for (int i=0; i < ((int)heap.heap_size)-1; i++) {
+		std::cout << heap.ptr_max_min[i] << ", ";
+	}
+	
+	std::cout << heap.ptr_max_min[heap.heap_size-1] << "]\n\n";
 }
 
 int main () {
+	
 	dst::double_heap<int> heap;
+
+	display(heap);
+
+	std::cout << "insert(1)\n";
 	heap.insert(1);
-	heap.insert(2);
-	heap.insert(3);
-	heap.insert(4);
-	heap.insert(5);
+	display(heap);
+	
+	std::cout << "insert(9)\n";
+	heap.insert(9);
+	display(heap);
+	
+	std::cout << "insert(6)\n";
 	heap.insert(6);
+	display(heap);
+	
+	std::cout << "insert(9)\n";
+	heap.insert(9);
+	display(heap);
+	
+	std::cout << "insert(7)\n";
+	heap.insert(7);
+	display(heap);
+	
+	std::cout << "insert(5)\n";
+	heap.insert(5);
+	display(heap);
+	
+	std::cout << "extract max: ";
+	std::cout << heap.extract_max() << "\n";
+	display(heap);
+
+	std::cout << "insert(8)\n";
+	heap.insert(8);
+	display(heap);
+	
+	std::cout << "extract min: ";
+	std::cout << heap.extract_min() << "\n";
+	display(heap);
+
+	std::cout << "extract min: ";
+	std::cout << heap.extract_min() << "\n";
+	display(heap);
+	
+	std::cout << "extract min: ";
+	std::cout << heap.extract_min() << "\n";
+	display(heap);	
+
 	return 0;
+}*/
+
+#include <stdio.h>
+#include <string.h>
+
+int main () {
+	dst::double_heap<int> heap;
+	size_t N;
+
+	scanf("%lu", &N);
+	char f = '\0';
+	char request[10];
+
+	int A;
+
+	for (size_t i=0; i < N; i++) {
+		scanf("%c", &f);
+		if (f == '\n') {
+			--i;
+		}
+
+		else if (f == 'I') {
+			scanf("nsert(%d)", &A);
+			heap.insert(A);
+		}
+
+		else if (f == 'G') {
+			scanf("%s", request);
+			if (!strncmp (request, "etMin", sizeof("etMin"))) {
+				printf("%d\n", heap.extract_min());
+			}
+
+			else {
+				printf("%d\n", heap.extract_max());
+			}
+		}
+
+		else {printf("Error!\n");}
+	}
 }
