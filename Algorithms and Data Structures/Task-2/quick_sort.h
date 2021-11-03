@@ -141,7 +141,7 @@ namespace dst {
 			if (size <= 1) { return; }
 			
 			size_t middle = __quick_middle<T,C> (array, size, cmp_function);
-			size_t middle_size = 0;
+			size_t middle_size;
 
 			__quick_partition<T,C> (array, size, middle, middle_size, cmp_function);
 
@@ -154,33 +154,4 @@ namespace dst {
 			return;
 		}
 
-}
-
-#include <iostream>
-#include <bits/stdc++.h>
-
-int main() {
-	std::ios_base::sync_with_stdio(false);
-	std::cin.tie(NULL);
-
-	size_t n;
-	std::cin >> n;
-
-	int* array = new int[n];
-
-	for (size_t i=0; i < n; i++) {
-		std::cin >> array[i];	
-	}
-
-	dst::quick_sort(array, n);
-
-	for (int i=0; i < n; i++) {
-		std::cout << array[i] << " ";
-	}
-
-	std::cout << "\n";
-	
-	delete [] array;
-
-	return 0;
 }

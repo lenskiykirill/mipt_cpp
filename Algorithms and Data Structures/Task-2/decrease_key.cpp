@@ -21,7 +21,7 @@ namespace dst {
 				
 				T& extract (void); // Extract minimal element from heap
 				unsigned int insert (T& element); // Insert element and return its key
-				const T& top (void);
+				const T& top (void) const;
 
 				T* sort (void);
 				unsigned int size (void);
@@ -31,7 +31,7 @@ namespace dst {
 				void decrease_key (unsigned int key, const T& delta);
 
 				void display (void);	
-		//	private:
+			private:
 		
 				bool (*is_less) (T, T);
 				
@@ -194,43 +194,6 @@ namespace dst {
 						this->heap_array[idx])) ) {
 				
 				this->heap_swap (idx, first_child);
-			}
-
-			return;
-		}
-
-	template <class T>
-		void heap<T>::heapify (T* extern_array, unsigned int size) {
-
-			this->heap_array = extern_array;
-			this->heap_size = size;
-			this->array_size = size;
-
-			delete this->key_array;
-
-			this->key_array = new unsigned int [size];
-			this->key_size = size;
-			this->last_key = size;
-
-			for (unsigned int i=0; i < this->heap_size; i++) {
-
-				this->key_array[i] = i;
-			}
-
-			for (unsigned int i = this->heap_size; i > 0; i--) {
-				
-				this->sift_down (i - 1);
-			}
-			
-			return;
-		}
-
-	template <class T>
-		void heap<T>::heapify (void) {
-			
-			for (unsigned int i = this->heap_size; i > 0; i--) {
-
-				this->sift_down (i - 1);
 			}
 
 			return;
