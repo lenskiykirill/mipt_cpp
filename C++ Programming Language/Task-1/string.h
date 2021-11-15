@@ -11,11 +11,15 @@ class String {
             String (const char* cstring);
             String (const String& other);
             String (size_t n, char c);
+            
+            ~String ();
+
+            String& operator= (const String& other);
 
             char& operator[] (size_t index);
             const char& operator[] (size_t index) const;
 
-            size_t length ();
+            size_t length () const;
 
             void push_back (char value);
             char pop_back ();
@@ -65,22 +69,23 @@ class String {
             void __resize (size_t new_size);
 };
 
-String::String () {
+String::String () { // OK
       __allocated_size = 1;
       __string_size = 0;
 
       __string_array = new char[__allocated_size];
 }
 
-String::String (char value) {
-      __allocated_size = 1;
+String::String (char value) { // OK
+      __allocated_size = 2;
       __string_size = 1;
 
       __string_array = new char[__allocated_size];
       __string_array[0] = value;
 }
 
-String::String (const char* cstring) {
+String::String (const char* cstring) { // OK
+
       __string_size = strlen (cstring);
       __string_array = new char[__string_size];
 
@@ -89,7 +94,7 @@ String::String (const char* cstring) {
       strncpy (__string_array, cstring, __string_size);
 }
 
-String::String (const String& other) {
+String::String (const String& other) { // OK
       
       __string_size = other.__string_size;
       __allocated_size = other.__allocated_size;
@@ -99,7 +104,7 @@ String::String (const String& other) {
       strncpy (__string_array, other.__string_array, __string_size);
 }
 
-String::String (size_t n) {
+String::String (size_t n) { // OK
 
       __string_size = 0;
       __allocated_size = n;
@@ -107,32 +112,56 @@ String::String (size_t n) {
       __string_array = new char[__allocated_size];
 }
 
-String::String (size_t n, char c) {
+String::String (size_t n, char c) { // OK
+
       __string_size = n;
       __allocated_size = n;
 
       __string_array = new char[__allocated_size];
-
-      for (size_t i = 0; i < __string_size; i++) {
-            __string_array[i] = c;
-      }
+      
+      memset (__string_array, c, __string_size);
 }
 
-void String::__increase () {
-      if (__string_size == __allocated_size) {
-            __allocated_size *= 2;
+String::~String () { // OK
+
+      delete [] __string_array;
+}
+
+
+String& String::operator= (const String& other) {
+
+      if (&other == this) {
+            return *this;
+      }
+
+      __string_size = other.__string_size;
+      __allocated_size = other.__allocated_size;
+
+      delete [] __string_array;
+
+      __string_array = new char[__allocated_size];
+
+      strncpy (__string_array, other.__string_array, __string_size);
+      
+      return *this;
+}
+
+void String::__increase () { // OK
+      if (__string_size >= __allocated_size) {
+            __allocated_size = __string_size*2 + 1;
 
             char* string_array = new char[__allocated_size];
             
             strncpy (string_array, __string_array, __string_size);
 
             delete [] __string_array;
+
             __string_array = string_array;
       }
 }
 
-void String::__decrease () {
-      if ((__string_size << 2) < __allocated_size) {
+void String::__decrease () { // OK -- this MUST work just fine
+      /*if ((__string_size << 2) < __allocated_size) {
             
             __allocated_size /= 2;
             
@@ -141,11 +170,13 @@ void String::__decrease () {
             strncpy (string_array, __string_array, __string_size);
 
             delete [] __string_array;
+
             __string_array = string_array;
       }
+      */
 }
 
-void String::__resize (size_t new_size) {
+void String::__resize (size_t new_size) { // This may or may not work
       __allocated_size = new_size;
 
       char* string_array = new char[new_size];
@@ -165,7 +196,7 @@ const char& String::operator[] (size_t index) const {
       return __string_array[index];
 }
 
-size_t String::length() {
+size_t String::length() const {
       return __string_size;
 }
 
@@ -312,11 +343,8 @@ bool String::operator== (const String& other) const {
             return false;
       }
 
-      if (strncmp (__string_array, other.__string_array, __string_size)) {
+      return strncmp (__string_array, other.__string_array, __string_size) == 0;
             return false;
-      }
-
-      return true;
 }
 
 bool String::operator== (const char* cstring) const {
@@ -325,11 +353,7 @@ bool String::operator== (const char* cstring) const {
             return false;
       }
 
-      if (strncmp (__string_array, cstring, __string_size)) {
-            return false;
-      }
-
-      return true;
+      return strncmp (__string_array, cstring, __string_size) == 0;
 }
 
 bool String::operator== (char c) const {
@@ -352,7 +376,6 @@ bool operator== (char c, const String& s) {
 }
 
 String String::substr (size_t start, size_t count) const{
-      
       String s (count);
 
       strncpy (s.__string_array, __string_array + start, count);
@@ -362,6 +385,7 @@ String String::substr (size_t start, size_t count) const{
 }
 
 size_t String::find (const String& s) const {
+
       if (s.__string_size > __string_size) {
             return __string_size;
       }
@@ -406,10 +430,4 @@ void String::clear () {
 
 #endif
 
-int main () {
-      String x = String (3, 'K');
-//      std::cin >> x;
-      std::cout << x << std::endl;
-
-      return 0;
-}
+/* OK, let me be honest with you. This contest is a piece of sh*t;*/

@@ -4,10 +4,10 @@ namespace dst {
 	template <class T>
 		struct __quick_swp_default {
 		       	
-			void operator() (T* array, size_t left, size_t right) {
-				T swp = array[left];
-				array[left] = array[right];
-				array[right] = swp;
+			void operator() (T& left, T& right) {
+				T swp = left;
+				left = right;
+				right = swp;
 			}
 		};
 
@@ -26,7 +26,7 @@ namespace dst {
 					C cmp_function, S swp_function
 				       ) {
 			
-			swp_function (array, middle, size-1);
+			swp_function (array[middle], array[size-1]);
 
 			size_t i = 0;
 			size_t j = size - 1;
@@ -42,7 +42,7 @@ namespace dst {
 						if (j == middle_array)
 							--j;
 						
-						swp_function (array, i, --middle_array);
+						swp_function (array[i], array[--middle_array]);
 					} else {
 						++i;
 					}
@@ -52,7 +52,7 @@ namespace dst {
 					!cmp_function (array[j-1], array[size-1]) ) {
 					
 					if (!cmp_function (array[size-1], array[j-1])) {
-						swp_function (array, j-1, --middle_array);
+						swp_function (array[j-1], array[--middle_array]);
 					} else {
 						--j;
 					}
@@ -63,14 +63,14 @@ namespace dst {
 					middle_size = 0;
 
 					while (middle_array < size) {
-						swp_function (array, j++, middle_array++);
+						swp_function (array[j++], array[middle_array++]);
 						++middle_size;
 					}
 
 					return;
 				}
 
-				swp_function (array, i, j-1);
+				swp_function (array[i], array[j-1]);
 			}
 		}
 
@@ -83,7 +83,7 @@ namespace dst {
 			for (size_t i = 0; i < size-1; ++i) {
 				for (size_t j = i+1; j < size; j++) {
 					if (cmp_function (array[j], array[i])) {
-						swp_function (array, j, i);
+						swp_function (array[j], array[i]);
 					}
 				}
 			}
@@ -115,8 +115,8 @@ namespace dst {
 				   	       );
 
 				swp_function (
-					      array,
-					      part_size*i + part_size / 2, i
+					      array[part_size*i + part_size / 2],
+                                    array[i]
 					     );
 			}
 
@@ -193,19 +193,110 @@ namespace dst {
 		}
 }
 
+namespace dst {
+      template <class T>
+            struct __fenwick_default {
+                  T operator() (const T& left, const T& right) {
+                        return left + right;
+                  }
+            };
+
+      template <class T, class F = __fenwick_default<T>>
+            class fenwick {
+
+                  public:
+                        fenwick (T* array, size_t size, F fenwick_function);
+                        fenwick (T zero, size_t size, F fenwick_function = __fenwick_default<T>());
+                        ~fenwick ();
+                        
+                        void modify (size_t idx, const T& value);
+                        T count (size_t idx);
+
+                  private:
+                        T* fenwick_array;
+                        F fenwick_function;
+
+                        size_t size;
+
+                        size_t f (size_t idx);
+                        size_t g (size_t idx);
+            };
+
+      template <class T, class F>
+            size_t fenwick<T,F>::f (size_t idx) {
+                  return idx & (idx+1);
+            }
+
+      template <class T, class F>
+            size_t fenwick<T,F>::g (size_t idx) {
+                  return idx | (idx+1);
+            }
+
+      template <class T, class F>
+            T fenwick<T,F>::count (size_t idx) {
+                  
+                  if (idx == 0) {
+                        return fenwick_array[0];
+                  }
+
+                  T res = fenwick_array[idx];
+                  idx = f(idx)-1;
+
+                  for (; f(idx) > 0; idx = f(idx)-1) {
+                        res = fenwick_function (fenwick_array[idx], res);
+                  }
+
+                  res = fenwick_function (fenwick_array[idx], res);
+
+                  return res;
+            }
+
+      template <class T, class F>
+            void fenwick<T,F>::modify (size_t idx, const T& value) {
+                  for (; idx < size; idx = g(idx)) {
+                        fenwick_array[idx] = fenwick_function (fenwick_array[idx], value);
+                  }
+            }
+
+      template <class T, class F>
+            fenwick<T,F>::fenwick (T zero, size_t size, F fenwick_function) {
+                  fenwick_array = new T[size];
+                  this->size = size;
+
+                  this->fenwick_function = fenwick_function;
+
+                  for (size_t i = 0; i < size; i++) {
+                        this->fenwick_array[i] = zero;
+                  }
+            }
+
+      template <class T, class F>
+            fenwick<T,F>::~fenwick () {
+                  delete [] fenwick_array;
+            }
+}
+
 struct nested_sort {
 	size_t* unsorted;
 	size_t* sorted;
 	size_t* other_end;
 
 	bool operator() (size_t left, size_t right) {
-		return unsorted[left] < unsorted[right];
+            if (sorted[left] == sorted[right]) {
+                  if (sorted[other_end[left]] != sorted[other_end[right]])
+                        return sorted[other_end[left]] > sorted[other_end[right]];
+
+                  std::cerr << "Error!\n";
+                  exit(-1);
+            }
+
+		return sorted[left] < sorted[right];
 	}
 
-	void swap (size_t* sorted, size_t left, size_t right) {
-		size_t swp = sorted[right];
-		sorted[right] = sorted[left];
-		sorted[left] = swp;
+	void swap (size_t& left, size_t& right) {
+		size_t swp = sorted[left];
+		sorted[left] = sorted[right];
+            sorted[right] = swp;
 
 		if (other_end[left] != right) {
 			other_end[other_end[left]] = right;
@@ -220,8 +311,8 @@ struct nested_sort {
 
 struct nested_swap {
 	nested_sort* ns;
-	void operator () (size_t* array, size_t left, size_t right) {
-		ns->swap(array, left, right);
+	void operator () (size_t& left, size_t& right) {
+		ns->swap(left, right);
 	}
 };
 
@@ -231,11 +322,11 @@ size_t get_nested_segments (size_t* left, size_t* right, size_t size) {
 	size_t* other_end = new size_t [2*size];
 
 	for (size_t i = 0; i < size; ++i) {
-		unsorted[2*i] = left[i];
-		unsorted[2*i+1] = right[i];
+		sorted[2*i] = left[i];
+		sorted[2*i+1] = right[i];
 
-		sorted[2*i] = 2*i;
-		sorted[2*i+1] = 2*i+1;
+		unsorted[2*i] = 2*i;
+		unsorted[2*i+1] = 2*i+1;
 
 		other_end[2*i] = 2*i + 1;
 		other_end[2*i+1] = 2*i;
@@ -251,9 +342,23 @@ size_t get_nested_segments (size_t* left, size_t* right, size_t size) {
 	ns_swp.ns = &ns;
 
 	dst::quick_sort<size_t, nested_sort, nested_swap> (
-							   sorted, 2*size,
+							   unsorted, 2*size,
 							   ns, ns_swp
 							  );
+      size_t* reps new size_t[size];
+      reps[0] = 1;
+      
+      size_t new_size = 1;
+
+      for (size_t i = 1; i < size; ++i) {
+            if (
+                (sorted[i] == sorted[i-1]) &&
+                (sorted[other_end[i]] == sorted[other_end[i-1]])
+               ) {
+                  ++reps[new_size-1];
+            }
+      }
+
 	return 0;
 }
 
@@ -263,7 +368,11 @@ int main () {
 	size_t left[] = {1, 5, 3, 9};  //= new size_t [SIZE];
 	size_t right[] = {6, 2, 8, 4}; //= new size_t [SIZE];
 
-	get_nested_segments (left, right, 4);
+	//get_nested_segments (left, right, 4);
+
+      dst::fenwick<int> F (0, 10);
+      F.modify(5, 1);
+      std::cout << F.count(8)-F.count(4) << '\n';
 
 	return 0;
 }
