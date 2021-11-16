@@ -51,7 +51,10 @@ namespace dst {
 				while ( (j > 0) && // TODO: check this!
 					!cmp_function (array[j-1], array[size-1]) ) {
 					
-					if (!cmp_function (array[size-1], array[j-1])) {
+					if (
+                                  (!cmp_function (array[size-1], array[j-1])) &&
+                                  (j < middle_array)
+                                 ) {
 						swp_function (array[j-1], array[--middle_array]);
 					} else {
 						--j;
@@ -206,13 +209,14 @@ namespace dst {
 
                   public:
                         fenwick (T* array, size_t size, F fenwick_function);
-                        fenwick (T zero, size_t size, F fenwick_function = __fenwick_default<T>());
+                        fenwick (const T& zero, size_t size, F fenwick_function = __fenwick_default<T>());
                         ~fenwick ();
                         
                         void modify (size_t idx, const T& value);
                         T count (size_t idx);
 
                   private:
+
                         T* fenwick_array;
                         F fenwick_function;
 
@@ -235,8 +239,8 @@ namespace dst {
       template <class T, class F>
             T fenwick<T,F>::count (size_t idx) {
                   
-                  if (idx == 0) {
-                        return fenwick_array[0];
+                  if (f(idx) == 0) {
+                        return fenwick_array[idx];
                   }
 
                   T res = fenwick_array[idx];
@@ -259,7 +263,7 @@ namespace dst {
             }
 
       template <class T, class F>
-            fenwick<T,F>::fenwick (T zero, size_t size, F fenwick_function) {
+            fenwick<T,F>::fenwick (const T& zero, size_t size, F fenwick_function) {
                   fenwick_array = new T[size];
                   this->size = size;
 
@@ -286,8 +290,7 @@ struct nested_sort {
                   if (sorted[other_end[left]] != sorted[other_end[right]])
                         return sorted[other_end[left]] > sorted[other_end[right]];
 
-                  std::cerr << "Error!\n";
-                  exit(-1);
+                  return other_end[left] < other_end[right];
             }
 
 		return sorted[left] < sorted[right];
@@ -323,7 +326,7 @@ size_t get_nested_segments (size_t* left, size_t* right, size_t size) {
 
 	for (size_t i = 0; i < size; ++i) {
 		sorted[2*i] = left[i];
-		sorted[2*i+1] = right[i];
+		sorted[2*i+1] = right[i]+1;
 
 		unsorted[2*i] = 2*i;
 		unsorted[2*i+1] = 2*i+1;
@@ -345,34 +348,110 @@ size_t get_nested_segments (size_t* left, size_t* right, size_t size) {
 							   unsorted, 2*size,
 							   ns, ns_swp
 							  );
-      size_t* reps new size_t[size];
-      reps[0] = 1;
-      
-      size_t new_size = 1;
+      size_t* reps = new size_t[2*size];
+      size_t* modified = new size_t[2*size];
+      size_t* modified_end = new size_t [2*size];
+      size_t* sorted_mod = new size_t [2*size];
 
-      for (size_t i = 1; i < size; ++i) {
+      modified[0] = sorted[0];
+      modified_end[0] = other_end[0];
+      sorted_mod[0] = 0;
+
+      reps[0] = 1;
+
+      size_t new_size = 1;
+      /*
+      for (size_t i=1; i < 2*size; ++i) {
             if (
                 (sorted[i] == sorted[i-1]) &&
                 (sorted[other_end[i]] == sorted[other_end[i-1]])
                ) {
+                  sorted_mod[i] = sorted_mod[i-1];
                   ++reps[new_size-1];
+
+            } else {
+                  sorted_mod[i] = new_size;
+                  modified[new_size] = sorted[i];
+                  reps[i] = 1;
+
+                  ++new_size;
+            }
+
+            if (i > other_end[i]) {
+                  modified_end[sorted_mod[other_end[i]]] = new_size-1;
+                  modified_end[i] = sorted_mod[other_end[i]];
             }
       }
 
-	return 0;
+      delete [] sorted;
+      delete [] other_end;
+      delete [] sorted_mod;
+
+      sorted = modified;
+      other_end = modified_end;
+
+      size = new_size;
+*/      
+      dst::fenwick<size_t> huenwick (0, size);
+      size_t result = 0;
+
+      for (size_t i = 0; i < size; i++) {
+            if (sorted[other_end[i]] < sorted[i]) { // if it's right end of segment
+                  huenwick.modify (other_end[i], 1/**reps[i]*/);
+                  result += ((huenwick.count (i-1) - huenwick.count (other_end[i]))*reps[i]);
+            }
+      }
+      
+      delete [] unsorted;
+      delete [] sorted;
+      delete [] other_end;
+      delete [] reps;
+
+	return result;
+}
+
+size_t dumb_test (size_t* left, size_t* right, size_t size) {
+      size_t res = 0;
+
+      for (size_t i=0; i < size; ++i)
+            for (size_t j=0; j < size; ++j)
+                  if (i != j) {
+                        if (((left[i] <= left[j]) && (right[i] > right[j])) || ((left[i] < left[j]) && (right[i] >= right[j]))) {
+                              ++res;
+                        }
+                  }
+
+      return res;
 }
 
 #define SIZE 4
 
 int main () {
-	size_t left[] = {1, 5, 3, 9};  //= new size_t [SIZE];
-	size_t right[] = {6, 2, 8, 4}; //= new size_t [SIZE];
+      size_t N;
+      std::cin >> N;
 
-	//get_nested_segments (left, right, 4);
+	size_t* left = new size_t[N];  //= new size_t [SIZE];
+	size_t* right = new size_t[N]; //= new size_t [SIZE];
+      
+      for (size_t i=0; i < N; ++i) {
+            std::cin >> left[i] >> right[i];
+      }
+ /*      
+      std::cout << get_nested_segments (left, right, N) << '\n';
 
-      dst::fenwick<int> F (0, 10);
-      F.modify(5, 1);
-      std::cout << F.count(8)-F.count(4) << '\n';
+      delete [] left;
+      delete [] right;
 
+      return 0;
+// */
+      if (dumb_test(left, right, N) != get_nested_segments (left, right, N)) {
+            std::cerr << "Error!\n";
+      } else {
+            std::cout << "OK\n";
+      }
+      
+      delete [] left;
+      delete [] right;
+      
 	return 0;
 }
