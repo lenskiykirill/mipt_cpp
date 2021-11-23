@@ -51,10 +51,7 @@ namespace dst {
 				while ( (j > 0) && // TODO: check this!
 					!cmp_function (array[j-1], array[size-1]) ) {
 					
-					if (
-                                  (!cmp_function (array[size-1], array[j-1])) &&
-                                  (j < middle_array)
-                                 ) {
+					if (!cmp_function (array[size-1], array[j-1])) {
 						swp_function (array[j-1], array[--middle_array]);
 					} else {
 						--j;
@@ -119,7 +116,7 @@ namespace dst {
 
 				swp_function (
 					      array[part_size*i + part_size / 2],
-                                    array[i]
+					      array[i]
 					     );
 			}
 
@@ -196,86 +193,27 @@ namespace dst {
 		}
 }
 
-namespace dst {
-      template <class T>
-            struct __fenwick_default {
-                  T operator() (const T& left, const T& right) {
-                        return left + right;
-                  }
-            };
+#define SIZE 4
 
-      template <class T, class F = __fenwick_default<T>>
-            class fenwick {
+int main () {
+	size_t N;
+	std::cin >> N;
 
-                  public:
-                        fenwick (T* array, size_t size, F fenwick_function);
-                        fenwick (const T& zero, size_t size, F fenwick_function = __fenwick_default<T>());
-                        ~fenwick ();
-                        
-                        void modify (size_t idx, const T& value);
-                        T count (size_t idx);
+	long long* array = new long long [N];
 
-                  private:
+	for (size_t i = 0; i < N; i++) {
+		std::cin >> array[i];
+	}
 
-                        T* fenwick_array;
-                        F fenwick_function;
+	dst::quick_sort (array, N);
 
-                        size_t size;
+	for (size_t i = 0; i < N; i++) {
+		std::cout << array[i] << ' ';
+	}
 
-                        size_t f (size_t idx);
-                        size_t g (size_t idx);
-            };
+	std::cout << '\n';
 
-      template <class T, class F>
-            size_t fenwick<T,F>::f (size_t idx) {
-                  return idx & (idx+1);
-            }
+	delete [] array;
 
-      template <class T, class F>
-            size_t fenwick<T,F>::g (size_t idx) {
-                  return idx | (idx+1);
-            }
-
-      template <class T, class F>
-            T fenwick<T,F>::count (size_t idx) {
-                  
-                  if (f(idx) == 0) {
-                        return fenwick_array[idx];
-                  }
-
-                  T res = fenwick_array[idx];
-                  idx = f(idx)-1;
-
-                  for (; f(idx) > 0; idx = f(idx)-1) {
-                        res = fenwick_function (fenwick_array[idx], res);
-                  }
-
-                  res = fenwick_function (fenwick_array[idx], res);
-
-                  return res;
-            }
-
-      template <class T, class F>
-            void fenwick<T,F>::modify (size_t idx, const T& value) {
-                  for (; idx < size; idx = g(idx)) {
-                        fenwick_array[idx] = fenwick_function (fenwick_array[idx], value);
-                  }
-            }
-
-      template <class T, class F>
-            fenwick<T,F>::fenwick (const T& zero, size_t size, F fenwick_function) {
-                  fenwick_array = new T[size];
-                  this->size = size;
-
-                  this->fenwick_function = fenwick_function;
-
-                  for (size_t i = 0; i < size; i++) {
-                        this->fenwick_array[i] = zero;
-                  }
-            }
-
-      template <class T, class F>
-            fenwick<T,F>::~fenwick () {
-                  delete [] fenwick_array;
-            }
+	return 0;
 }

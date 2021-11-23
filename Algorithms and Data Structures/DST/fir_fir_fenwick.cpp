@@ -279,3 +279,14 @@ namespace dst {
                   delete [] fenwick_array;
             }
 }
+
+/*------------------------ HERE GOES MY CODE ---------------------------*/
+
+struct inner_fenwick {
+      size_t size;
+      dst::fenwick<unsigned long long> F;
+      
+      inner_fenwick (size_t siez, size_t* sizes) {
+            
+      }
+};
