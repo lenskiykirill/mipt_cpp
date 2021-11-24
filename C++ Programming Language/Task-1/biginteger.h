@@ -18,6 +18,7 @@ class BigInteger {
       public:
             BigInteger (long long init_value, unsigned long long radix = 0);
             BigInteger (const BigInteger& other);
+            BigInteger ();
             ~BigInteger ();
 
             const BigInteger& operator= (const BigInteger& other);
@@ -82,6 +83,15 @@ class BigInteger {
             void pos_div (const BigInteger& other);
             void pos_rem (const BigInteger& other);
 };
+
+BigInteger::BigInteger () :
+      is_m_deceimal (true), power (0), is_negative (false),
+      size (0), digits (nullptr), allocated_size (0)
+{
+      for (unsigned long r = radix; r > 0; r /= 10)
+            ++power;
+      --power;
+}
 
 BigInteger::BigInteger (long long init_value, unsigned long long radix) :
       is_m_deceimal (true), power (0), is_negative (false),
@@ -460,6 +470,8 @@ void BigInteger::pos_mul (const BigInteger& other)
             ans += tmp_ans;
       }
 
+      ans.is_negative = is_negative;
+
       *this = ans;
 }
 
@@ -650,12 +662,6 @@ BigInteger& BigInteger::operator*= (const BigInteger& other)
 
 BigInteger& BigInteger::operator/= (const BigInteger& other)
 {
-      if (this == &other)
-      {
-            *this = BigInteger (1);
-            return *this;
-      }
-
       if ((size > 0) && (other.size > 0))
             pos_div (other);
 
@@ -690,6 +696,9 @@ BigInteger::operator long long () const
             res += digits[i]*pow;
             pow *= radix;
       }
+
+      if (is_negative)
+            res = -res;
 
       return res;
 }
@@ -818,21 +827,3 @@ std::string BigInteger::toString () const
 }
 
 /*      DANGER!!! TESTING TERRITORY!!! NO CLASS CODE BEYOUND THIS POINT!!!         */
-
-int main () {
-      long long x, y;
-      //std::cin >> x >> y;
-      //
-
-      BigInteger a (0), b (0);
-
-//      std::cin >> a >> b;
-//      std::cout << a / b << std::endl;
-
-      std::cin >> a;
-//      std::string s = a.toString();
-//      std::cout << s << '\n';
-
-      a /= a;
-      std::cout << (a) << '\n';
-}
