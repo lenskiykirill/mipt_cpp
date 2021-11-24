@@ -126,7 +126,7 @@ BigInteger::BigInteger (const BigInteger& other)
 }
 
 BigInteger::~BigInteger () {
-      if ((size != 0) && digits)
+      if ((size != 0) || digits)
             delete [] digits;
 }
 
@@ -357,9 +357,9 @@ void BigInteger::pos_sub (const BigInteger& other)
       {
             is_negative = false;
 
-            delete [] digits;
-            digits = nullptr;
-            allocated_size = 0;
+//            delete [] digits;
+//            digits = nullptr;
+//            allocated_size = 0;
       }
 }
 
@@ -449,6 +449,72 @@ void BigInteger::pos_mul (const BigInteger& other)
       *this = ans;
 }
 
+void BigInteger::pos_div (const BigInteger& other)
+{
+      BigInteger ans (0);
+      BigInteger tmp_ans (0);
+      BigInteger bin_search (0);
+
+      tmp_ans.resize (other.size+1);
+      ans.resize (size - other.size + 1);
+      ans.size = (size - other.size + 1);
+
+      push_back (0);
+
+      for (size_t i = size-other.size; i > 0; --i)
+      {
+            tmp_ans.size = 0;
+
+            for (size_t j = i; j < size+1; ++j)
+            {
+                  tmp_ans.digits[j-i] = digits[j-1];
+                  ++tmp_ans.size;
+            }
+            
+            unsigned long long left = 0;
+            unsigned long long right = radix;
+            
+            while ((tmp_ans.size > 0) && (tmp_ans.digits[tmp_ans.size-1] == 0))
+                  --tmp_ans.size;
+
+            while (right-left > 1)
+            {
+                  unsigned long long middle = (left+right) / 2;
+                  
+                  bin_search = middle;
+                  bin_search *= other;
+
+                  if (bin_search <= tmp_ans)
+                        left = middle;
+                  else
+                        right = middle;
+            }
+
+            ans.digits[i-1] = left;
+            
+            bin_search = left;
+            bin_search *= other;
+
+            tmp_ans -= bin_search;
+            if (tmp_ans.size > 0)
+                  for (size_t j = i; j < size+1; ++j)
+                        digits[j-1] = tmp_ans.digits[j-i];
+            else
+                  for (size_t j = i; j < size+1; ++j)
+                        digits[j-1] = 0;
+
+            --size;
+      }
+
+      while ((ans.size > 0) && (ans.digits[ans.size-1] == 0))
+            --ans.size;
+      if (ans.size == 0) {
+            delete [] ans.digits;
+            ans.digits = nullptr;
+      }
+
+      *this = ans;
+}
 /*      Magic ends here and routine starts:(         */
 
 
@@ -546,11 +612,22 @@ BigInteger& BigInteger::operator*= (const BigInteger& other)
             return *this;
       }
 
+      if (size == 0)
+            return *this;
+
       pos_mul (other);
 
       if (other.is_negative) {
             is_negative = !is_negative;
       }
+
+      return *this;
+}
+
+BigInteger& BigInteger::operator/= (const BigInteger& other)
+{
+      if ((size > 0) && (other.size > 0))
+            pos_div (other);
 
       return *this;
 }
@@ -584,16 +661,43 @@ std::ostream& operator<< (std::ostream& out, const BigInteger& big_integer)
       return out;
 }
 
+std::istream& operator>> (std::istream& in, const BigInteger& big_integer)
+{
+      big_integer = BigInteger (0);
+      char c;
+      bool br = true;
+
+      while (br)
+      {
+            if (!in.get (c)) {return in;}
+
+            switch (c)
+            {
+                  case ' ':
+                  case '\t':
+                  case '\n':
+                        break;
+                  default:
+                        br = false;
+            }
+      }
+
+      
+      return in;
+}
+
 /*      DANGER!!! TESTING TERRITORY!!! NO CLASS CODE BEYOUND THIS POINT!!!         */
 
 int main () {
       long long x, y;
-      std::cin >> x >> y;
+      //std::cin >> x >> y;
+      //
+
+      x = 66; y = 666;
 
       BigInteger a (x);
       BigInteger b (y);
-
-      a *= b;
+      a /= b;
 
       std::cout << (a) << '\n';
 }
