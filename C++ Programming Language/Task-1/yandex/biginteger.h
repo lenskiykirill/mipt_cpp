@@ -85,8 +85,8 @@ class BigInteger {
 };
 
 BigInteger::BigInteger () :
-      is_m_deceimal (true), power (0), is_negative (false),
-      size (0), digits (nullptr), allocated_size (0)
+      is_m_deceimal (true), power (0), radix (default_radix),
+      is_negative (false), size (0), allocated_size (0), digits (nullptr)
 {
       for (unsigned long r = radix; r > 0; r /= 10)
             ++power;
@@ -95,7 +95,7 @@ BigInteger::BigInteger () :
 
 BigInteger::BigInteger (long long init_value, unsigned long long radix) :
       is_m_deceimal (true), power (0), is_negative (false),
-      size (0), digits (nullptr), allocated_size (0)
+      size (0), allocated_size (0), digits (nullptr)
 
 {
       if (radix == 0)
@@ -124,7 +124,9 @@ BigInteger::BigInteger (long long init_value, unsigned long long radix) :
       }
 }
 
-BigInteger::BigInteger (const BigInteger& other)
+BigInteger::BigInteger (const BigInteger& other) :
+      is_m_deceimal (true), power (0), is_negative (false),
+      size (0), allocated_size (0), digits (nullptr)
 {
       radix = other.radix;
       is_m_deceimal = other.is_m_deceimal;
@@ -156,6 +158,8 @@ BigInteger::~BigInteger () {
 
 const BigInteger& BigInteger::operator= (const BigInteger& other)
 {
+      is_negative = other.is_negative;
+
       if (this == &other)
             return *this;
 
@@ -183,8 +187,6 @@ const BigInteger& BigInteger::operator= (const BigInteger& other)
 
       allocated_size = other.allocated_size;
       size = other.size;
-
-      is_negative = other.is_negative;
 
       return *this;
 }
@@ -395,7 +397,7 @@ void BigInteger::pos_inc ()
       {
             unsigned long long result = digits[i] + carry;
             carry = result / radix;
-            digits[i] = result % carry;
+            digits[i] = result % radix;
       }
 
       if (carry)
@@ -477,6 +479,12 @@ void BigInteger::pos_mul (const BigInteger& other)
 
 void BigInteger::pos_div (const BigInteger& other)
 {
+      if (size < other.size)
+      {
+            *this = BigInteger (0);
+            return;
+      }
+
       BigInteger ans (0);
       BigInteger tmp_ans (0);
       BigInteger bin_search (0);
@@ -556,6 +564,13 @@ void BigInteger::pos_rem (const BigInteger& other)
 
 BigInteger& BigInteger::operator+= (const BigInteger& other)
 {
+
+      if (this == &other)
+      {
+            *this = *this + other;
+            return *this;
+      }
+
       if (is_negative == other.is_negative)
       {
             pos_add (other);
@@ -569,8 +584,6 @@ BigInteger& BigInteger::operator+= (const BigInteger& other)
             BigInteger tmp (other);
             tmp.pos_sub (*this);
             *this = tmp;
-
-            is_negative = !is_negative;
       }
       
       return *this;
@@ -578,6 +591,12 @@ BigInteger& BigInteger::operator+= (const BigInteger& other)
 
 BigInteger& BigInteger::operator-= (const BigInteger& other)
 {
+      if (this == &other)
+      {
+            *this = BigInteger (0);
+            return *this;
+      }
+
       if (is_negative == other.is_negative)
       {
             if (!pos_cmp (other))
@@ -609,7 +628,7 @@ BigInteger& BigInteger::operator++ ()
       return *this;
 }
 
-BigInteger BigInteger::operator++ (int postfix)
+BigInteger BigInteger::operator++ (int)
 {
       BigInteger result (*this);
 
@@ -631,7 +650,7 @@ BigInteger& BigInteger::operator-- ()
       return *this;
 }
 
-BigInteger BigInteger::operator-- (int postfix)
+BigInteger BigInteger::operator-- (int)
 {
       BigInteger result (*this);
 
@@ -642,6 +661,12 @@ BigInteger BigInteger::operator-- (int postfix)
 
 BigInteger& BigInteger::operator*= (const BigInteger& other)
 {
+      if (this == &other)
+      {
+            *this = *this * other;
+            return *this;
+      }
+
       if (other.size == 0)
       {
             *this = other;
@@ -662,6 +687,12 @@ BigInteger& BigInteger::operator*= (const BigInteger& other)
 
 BigInteger& BigInteger::operator/= (const BigInteger& other)
 {
+      if (this == &other)
+      {
+            *this = BigInteger(1);
+            return *this;
+      }
+
       if ((size > 0) && (other.size > 0))
             pos_div (other);
 
@@ -670,6 +701,12 @@ BigInteger& BigInteger::operator/= (const BigInteger& other)
 
 BigInteger& BigInteger::operator%= (const BigInteger& other)
 {
+      if (this == &other)
+      {
+            *this = BigInteger (0);
+            return *this;
+      }
+
       if ((size > 0) && (other.size > 0))
             pos_rem (other);
 
@@ -841,6 +878,7 @@ class Rational {
             Rational (const BigInteger& init_value);
             Rational (const BigInteger& nom, const BigInteger& denom);
             Rational (const Rational& other);
+            Rational ();
 
             ~Rational ();
 
@@ -857,6 +895,8 @@ class Rational {
             Rational& operator-= (const Rational& other);
             Rational& operator*= (const Rational& other);
             Rational& operator/= (const Rational& other);
+
+            Rational  operator- ();
             
             std::string toString () const;
             std::string asDecimal (size_t precision=0) const;
@@ -869,12 +909,16 @@ class Rational {
              void gcd ();
 };
 
+Rational::Rational () :
+      nom (0), denom (1)
+{}
+
 Rational::Rational (const BigInteger& init_value) :
-      denom (1), nom (init_value)
+      nom (init_value), denom (1)
 {}
 
 Rational::Rational (long long init_value) :
-      denom (1), nom (init_value)
+      nom (init_value), denom (1)
 {}
 
 Rational::Rational (const BigInteger& nom, const BigInteger& denom) :
@@ -911,6 +955,14 @@ void Rational::gcd ()
 
       if (sign)
             nom = -nom;
+}
+
+Rational& Rational::operator= (const Rational& other)
+{
+      nom = other.nom;
+      denom = other.denom;
+
+      return *this;
 }
 
 bool Rational::operator== (const Rational& other) const
@@ -996,6 +1048,12 @@ Rational& Rational::operator*= (const Rational& other)
 
 Rational& Rational::operator/= (const Rational& other)
 {
+      if (other.nom < 0)
+      {
+            nom = -nom;
+            denom = -denom;
+      }
+
       nom *= other.denom;
       denom *= other.nom;
 
@@ -1034,6 +1092,14 @@ Rational operator/ (const Rational& left, const Rational& right)
       R /= right;
 
       return R;
+}
+
+Rational Rational::operator- ()
+{
+      Rational other (*this);
+      other.nom = - other.nom;
+
+      return other;
 }
 
 std::string Rational::toString () const
@@ -1091,11 +1157,4 @@ Rational::operator double () const
             x = -x;
 
       return x;
-}
-
-int main () {
-      Rational R (-1, 6);
-      Rational L (-12, 2);
-
-      std::cout << static_cast<double> (R+L) << std::endl;
 }
