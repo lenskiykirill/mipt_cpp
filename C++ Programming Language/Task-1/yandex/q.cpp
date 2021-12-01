@@ -1,19 +1,9 @@
 #include "biginteger.h"
 
 int main () {
-      BigInteger a, b;
+      BigInteger x, y;
+      std::cin >> x >> y;
+      std::cout << (x / y) << '\n';
 
-      std::cin >> a >> b;
-
-      BigInteger c, d;
-
-      c = a % b;
-      d = a / b;
-
-      b = b*d + c;
-
-      if (b != a)
-            std::cout << "ERROR!\n";
-      else
-            std::cout << "OK\n";
+      return 0;
 }

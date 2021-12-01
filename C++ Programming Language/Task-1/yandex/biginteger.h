@@ -3,7 +3,7 @@
 #include <cassert>
 #include <sstream>
 
-#define __DEFAULT_BIGINTEGER_RADIX 1000000
+#define __DEFAULT_BIGINTEGER_RADIX 1000000000
 
 class BigInteger {
       friend std::ostream& operator<< (std::ostream&, const BigInteger&);
@@ -215,6 +215,9 @@ void BigInteger::push_back (unsigned long long digit)
 }
 
 void BigInteger::resize (size_t new_size) {
+      if (new_size <= allocated_size)
+            return;
+
       allocated_size = new_size;
 
       unsigned long long* digit_array = new unsigned long long [allocated_size];
@@ -561,6 +564,15 @@ void BigInteger::pos_rem (const BigInteger& other)
 
 /*      Magic ends here and routine starts:(         */
 
+BigInteger BigInteger::operator- () {
+      if (digits.size() == 0)
+            return *this;
+
+      BigInteger ret (*this);
+      ret.is_negative = !is_negative;
+
+      return ret;
+}
 
 BigInteger& BigInteger::operator+= (const BigInteger& other)
 {
@@ -693,8 +705,25 @@ BigInteger& BigInteger::operator/= (const BigInteger& other)
             return *this;
       }
 
+      bool sign = is_negative;
+      is_negative = false;
+      
+
       if ((size > 0) && (other.size > 0))
-            pos_div (other);
+      {
+
+            if (other.is_negative)
+            {
+                  BigInteger tmp (other);
+                  tmp.is_negative = false;
+                  pos_div (tmp);
+                  is_negative = true;
+            }
+            else 
+                  pos_div (other);
+      }
+
+      is_negative ^= sign;
 
       return *this;
 }
@@ -924,7 +953,7 @@ Rational::Rational (long long init_value) :
 Rational::Rational (const BigInteger& nom, const BigInteger& denom) :
       nom (nom), denom (denom)
 {
-      gcd ();
+      //gcd ();
 }
 
 Rational::Rational (const Rational& other) :
@@ -1000,8 +1029,11 @@ bool Rational::operator>= (const Rational& other) const
       return !(*this < other);
 }
 
-std::ostream& operator<< (std::ostream& out, Rational R)
+std::ostream& operator<< (std::ostream& out, Rational X)
 {
+      Rational R (X);
+      R.gcd ();
+
       out << R.nom;
       
       if ((R.nom != 0) && (R.denom != 1))
@@ -1018,7 +1050,7 @@ Rational& Rational::operator+= (const Rational& other)
       nom = new_nom;
       denom = new_denom;
 
-      gcd();
+      //gcd();
 
       return *this;
 }
@@ -1031,7 +1063,7 @@ Rational& Rational::operator-= (const Rational& other)
       nom = new_nom;
       denom = new_denom;
 
-      gcd ();
+      //gcd ();
 
       return *this;
 }
@@ -1041,7 +1073,7 @@ Rational& Rational::operator*= (const Rational& other)
       nom *= other.nom;
       denom *= other.denom;
 
-      gcd ();
+      //gcd ();
 
       return *this;
 }
@@ -1057,7 +1089,7 @@ Rational& Rational::operator/= (const Rational& other)
       nom *= other.denom;
       denom *= other.nom;
 
-      gcd ();
+      //gcd ();
 
       return *this;
 }
@@ -1105,7 +1137,9 @@ Rational Rational::operator- ()
 std::string Rational::toString () const
 {
       std::ostringstream s;
-      s << *this;
+      Rational x (*this);
+      x.gcd ();
+      s << x;
       return s.str();
 }
 
@@ -1114,6 +1148,8 @@ std::string Rational::asDecimal (size_t precision) const
       std::string s;
 
       Rational other (*this);
+      other.gcd ();
+
       if (other.nom < 0)
       {
             s += '-';
